@@ -19,16 +19,11 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -61,16 +56,12 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
     private Handler handler = new Handler();
     private ListViewAdapter listviewadapter;
     private List<ApresentaNoticia> listadenoticias = new ArrayList<ApresentaNoticia>();
-    private File arquivoNoticias;
-    private FileOutputStream outputStreamNoticias;
-    private final String nomeArquivoNoticias = "MinhasNoticias";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(main);
-        arquivoNoticias = new File(getApplicationContext().getFilesDir(), nomeArquivoNoticias);
-        Log.i("MainActivity", "gravando dados em " + arquivoNoticias.getAbsoluteFile());
         mReceiver = new NewsResultReceiver(new Handler());
         mReceiver.setReceiver(this);
         button = (Button) findViewById(R.id.button);
@@ -160,27 +151,6 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                     temNoticias = true;
                 }
                 if (temNoticias) {
-                    //apagando conteudo do arquivo em disco
-                    try {
-                        arquivoNoticias.getCanonicalFile().delete();
-                        Log.i("MainActivity", "preparação do arquivo de noticias concluída...");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    //fim da limpeza do arquivo de noticias
-                    //gravando vetor de noticias em disco
-                    try {
-                        outputStreamNoticias = openFileOutput(nomeArquivoNoticias, Context.MODE_PRIVATE);
-                        for (int i = 0; i > resultado.length; i++) {
-                            outputStreamNoticias.write(resultado[i].getBytes());
-                        }
-                        outputStreamNoticias.close();
-                        Log.i("MainActivity", "arquivo de noticias atualizado com sucesso.");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    //fim da gravacao do vetor de noticias
 
                     for (int i=0; i < novasNoticias.length; i++) {
                         String [] linha = novasNoticias[i].split(":");
