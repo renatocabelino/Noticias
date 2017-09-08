@@ -6,6 +6,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -56,6 +58,9 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
     private Handler handler = new Handler();
     private ListViewAdapter listviewadapter;
     private List<ApresentaNoticia> listadenoticias = new ArrayList<ApresentaNoticia>();
+    private BancoNoticias bancoNoticias;
+    public static SQLiteDatabase db;
+
 
 
     @Override
@@ -70,6 +75,13 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
         logoIfes.setImageResource(R.drawable.ifes_vitoria);
         logoIfesfundo = (ImageView) findViewById(R.id.ifesfundo);
         logoIfesfundo.setImageResource(R.drawable.fundocampusvitoria);
+
+        try {
+            bancoNoticias = new BancoNoticias(this);
+            db = bancoNoticias.getWritableDatabase();
+        } catch (SQLiteException e) {
+            Log.e("MainActivity", "Erro ao conectar com o banco de dados: " + e);
+        }
 
         intent = new Intent(this, ConsultaNoticia.class);
         intent.putExtra("receiver", mReceiver);

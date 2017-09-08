@@ -1,17 +1,12 @@
 package cabelino.noticiasCampusVitoria;
 
-import android.app.Activity;
 import android.app.IntentService;
-import android.app.job.JobParameters;
-import android.app.job.JobService;
-import android.content.Context;
+import android.content.ContentValues;
 import android.content.Intent;
-import android.os.Build;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.ResultReceiver;
-import android.support.annotation.RequiresApi;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -22,15 +17,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-import static android.app.Activity.RESULT_OK;
-import static android.app.DownloadManager.STATUS_RUNNING;
 import static android.drm.DrmInfoStatus.STATUS_ERROR;
 import static android.drm.DrmInfoStatus.STATUS_OK;
 import static junit.framework.Assert.assertEquals;
@@ -45,7 +36,7 @@ public class ConsultaNoticia extends IntentService {
     //private static final String URL_STRING = "http://api.openweathermap.org/data/2.5/weather?q=Vitoria,BR&appid=b621f9de087c67078a1216bf86a7109c";
     private static final String URL_STRING = "http://172.16.16.9/nuntius/ScholaService.svc/GetAllNews";
     private String [] noticias;
-
+    private ContentValues camposNoticias = new ContentValues();
 
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
@@ -68,6 +59,15 @@ public class ConsultaNoticia extends IntentService {
             for(int i=0; i< newsSize; i++){
                 JSONObject obj = (JSONObject)jsonArray.get(i);
                 noticias[i] = obj.getString("Titulo") + ":" + obj.getString("Data") + ":" + obj.getString("Hora");
+                //inserir dados de noticias no banco aqui
+                camposNoticias.put("_id",obj.getString("Id"));
+                camposNoticias.put("Data",obj.getString("Data"));
+                camposNoticias.put("Hora", obj.getString("Hora"));
+                camposNoticias.put("Titulo", obj.getString("Titulo"));
+                camposNoticias.put("Resumo", obj.getString("Resumo"));
+                camposNoticias.put("Conteudo", obj.getString("Conteudo"));
+                long newRowId = MainActivity.db.insert("NoticiasLocais", null, camposNoticias);
+                Log.i("ConsultaNoticia","Dados inseridos no banco rowId: " + newRowId);
             }
             return noticias;
         }
