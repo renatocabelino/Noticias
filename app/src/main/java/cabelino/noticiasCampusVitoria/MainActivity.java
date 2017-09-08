@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
@@ -59,7 +60,8 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
     private ListViewAdapter listviewadapter;
     private List<ApresentaNoticia> listadenoticias = new ArrayList<ApresentaNoticia>();
     private BancoNoticias bancoNoticias;
-    public static SQLiteDatabase db;
+    private SQLiteDatabase db;
+    private ContentValues camposNoticias = new ContentValues();
 
 
 
@@ -79,6 +81,8 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
         try {
             bancoNoticias = new BancoNoticias(this);
             db = bancoNoticias.getWritableDatabase();
+            db.execSQL("delete from NoticiasLocais");
+            db.execSQL("vacuum");
         } catch (SQLiteException e) {
             Log.e("MainActivity", "Erro ao conectar com o banco de dados: " + e);
         }
@@ -165,10 +169,18 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                 if (temNoticias) {
 
                     for (int i=0; i < novasNoticias.length; i++) {
-                        String [] linha = novasNoticias[i].split(":");
-                        ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[0], linha[1] + "  " + linha[2]);
+                        String [] linha = novasNoticias[i].split("_");
+                        ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
                         listadenoticias.add(umaNoticia);
-
+                        //inserir dados de noticias no banco aqui
+                        camposNoticias.put("_id",linha[0]);
+                        camposNoticias.put("Data",linha[1]);
+                        camposNoticias.put("Hora", linha[2]);
+                        camposNoticias.put("Titulo", linha[3]);
+                        camposNoticias.put("Resumo", linha[4]);
+                        camposNoticias.put("Conteudo", linha[5]);
+                        long newRowId = db.insert("NoticiasLocais", null, camposNoticias);
+                        Log.i("ConsultaNoticia","Dados inseridos no banco rowId: " + newRowId);
                     }
 
                     listviewadapter = new ListViewAdapter(this, R.layout.listview_item, listadenoticias);

@@ -36,7 +36,7 @@ public class ConsultaNoticia extends IntentService {
     //private static final String URL_STRING = "http://api.openweathermap.org/data/2.5/weather?q=Vitoria,BR&appid=b621f9de087c67078a1216bf86a7109c";
     private static final String URL_STRING = "http://172.16.16.9/nuntius/ScholaService.svc/GetAllNews";
     private String [] noticias;
-    private ContentValues camposNoticias = new ContentValues();
+
 
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
@@ -58,16 +58,7 @@ public class ConsultaNoticia extends IntentService {
             noticias = new String[newsSize];
             for(int i=0; i< newsSize; i++){
                 JSONObject obj = (JSONObject)jsonArray.get(i);
-                noticias[i] = obj.getString("Titulo") + ":" + obj.getString("Data") + ":" + obj.getString("Hora");
-                //inserir dados de noticias no banco aqui
-                camposNoticias.put("_id",obj.getString("Id"));
-                camposNoticias.put("Data",obj.getString("Data"));
-                camposNoticias.put("Hora", obj.getString("Hora"));
-                camposNoticias.put("Titulo", obj.getString("Titulo"));
-                camposNoticias.put("Resumo", obj.getString("Resumo"));
-                camposNoticias.put("Conteudo", obj.getString("Conteudo"));
-                long newRowId = MainActivity.db.insert("NoticiasLocais", null, camposNoticias);
-                Log.i("ConsultaNoticia","Dados inseridos no banco rowId: " + newRowId);
+                noticias[i] = obj.getString("Id") + "_" + obj.getString("Data") + "_" + obj.getString("Hora")+ "_" + obj.getString("Titulo")+ "_" + obj.getString("Resumo")+ "_" + obj.getString("Conteudo");
             }
             return noticias;
         }
