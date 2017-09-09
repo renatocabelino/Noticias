@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
@@ -60,7 +61,7 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
     private ListViewAdapter listviewadapter;
     private List<ApresentaNoticia> listadenoticias = new ArrayList<ApresentaNoticia>();
     private BancoNoticias bancoNoticias;
-    private SQLiteDatabase db;
+    private SQLiteDatabase db, dbRead;
     private ContentValues camposNoticias = new ContentValues();
 
 
@@ -81,11 +82,33 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
         try {
             bancoNoticias = new BancoNoticias(this);
             db = bancoNoticias.getWritableDatabase();
-            db.execSQL("delete from NoticiasLocais");
-            db.execSQL("vacuum");
+            dbRead = bancoNoticias.getReadableDatabase();
+            //db.execSQL("delete from NoticiasLocais");
+            //db.execSQL("vacuum");
         } catch (SQLiteException e) {
             Log.e("MainActivity", "Erro ao conectar com o banco de dados: " + e);
         }
+        //consultar banco de dados para carregar noticias locais
+        String [] colunasNoticias = {
+                "_id",
+                "Data",
+                "Hora",
+                "Titulo",
+                "Resumo",
+                "Conteudo"
+        };
+        String ordenacao = "_id DESC";
+        Cursor resultadoQuery = dbRead.query(
+                "NoticiasLocais",   //nome da tabela
+                colunasNoticias,    //colunas para retornar na pesquisa
+                null,               //colunas da clausula WHERE
+                null,               //valores das colunas da clausula WHERE
+                null,               // nao agrupar as colunas
+                null,               // nao filtrar grupos de colunas
+                ordenacao           //ordem de classificacao do resultado
+        );
+        resultadoQuery.moveToFirst();
+        Log.i("MainActivity", "Carga de " + resultadoQuery.getCount() + " noticias locais com sucesso ...");
 
         intent = new Intent(this, ConsultaNoticia.class);
         intent.putExtra("receiver", mReceiver);
