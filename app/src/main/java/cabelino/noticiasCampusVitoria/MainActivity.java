@@ -63,7 +63,7 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
     private BancoNoticias bancoNoticias;
     private SQLiteDatabase db, dbRead;
     private ContentValues camposNoticias = new ContentValues();
-
+    private String [] noticiasBancoLocal;
 
 
     @Override
@@ -108,7 +108,19 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                 ordenacao           //ordem de classificacao do resultado
         );
         resultadoQuery.moveToFirst();
-        Log.i("MainActivity", "Carga de " + resultadoQuery.getCount() + " noticias locais com sucesso ...");
+        Log.i("MainActivity", "Leitura de " + resultadoQuery.getCount() + " noticias locais com sucesso ...");
+        noticiasBancoLocal = new String[resultadoQuery.getCount()];
+        int indiceNoticia = 0;
+        while (!resultadoQuery.isAfterLast()) {
+            noticiasBancoLocal[indiceNoticia] = resultadoQuery.getString(resultadoQuery.getColumnIndexOrThrow("_id")) + "_" +
+                    resultadoQuery.getString(resultadoQuery.getColumnIndexOrThrow("Data")) + "_" +
+                    resultadoQuery.getString(resultadoQuery.getColumnIndexOrThrow("Hora")) + "_" +
+                    resultadoQuery.getString(resultadoQuery.getColumnIndexOrThrow("Titulo")) + "_" +
+                    resultadoQuery.getString(resultadoQuery.getColumnIndexOrThrow("Resumo")) + "_" +
+                    resultadoQuery.getString(resultadoQuery.getColumnIndexOrThrow("Conteudo"));
+            indiceNoticia ++;
+            resultadoQuery.moveToNext();
+        }
 
         intent = new Intent(this, ConsultaNoticia.class);
         intent.putExtra("receiver", mReceiver);
@@ -136,7 +148,7 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
         //initialize the TimerTask's job
         initializeTimerTask();
         //schedule the timer_example, after the first 5000ms the TimerTask will run every 6000000ms
-        timer.scheduleAtFixedRate(timerTask, 5000, 60000);
+        timer.scheduleAtFixedRate(timerTask, 10000, 60000);
         //
     }
     public void stoptimertask(View v) {
@@ -183,29 +195,49 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                     }
                 } else {
 
-                    novasNoticias = new String[ultimasNoticias.length];
-                    novasNoticias = ultimasNoticias;
+                    novasNoticias = new String[noticiasBancoLocal.length + ultimasNoticias.length];
+                    String [] oldNews, freshNews;
+                    novasNoticias = noticiasBancoLocal;
+                    int m = noticiasBancoLocal.length;
+                    for (int k=0; k > ultimasNoticias.length; k++) {
+                        freshNews = ultimasNoticias[k].split("_");
+                        for (int l=0; l < noticiasBancoLocal.length; l++ ) {
+                            oldNews = noticiasBancoLocal[l].split("_");
+                            if (!oldNews.equals(freshNews)) {
+                                novasNoticias[m] = ultimasNoticias[k];
+                                m++;
+                            }
+                        }
+                    }
+                    Log.i("MainActivity", "Total de mensagens atualizadas: " + novasNoticias.length);
+
                     resultado = novasNoticias;
-                    firstRun = false;
                     temNoticias = true;
                 }
                 if (temNoticias) {
-
-                    for (int i=0; i < novasNoticias.length; i++) {
-                        String [] linha = novasNoticias[i].split("_");
-                        ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
-                        listadenoticias.add(umaNoticia);
-                        //inserir dados de noticias no banco aqui
-                        camposNoticias.put("_id",linha[0]);
-                        camposNoticias.put("Data",linha[1]);
-                        camposNoticias.put("Hora", linha[2]);
-                        camposNoticias.put("Titulo", linha[3]);
-                        camposNoticias.put("Resumo", linha[4]);
-                        camposNoticias.put("Conteudo", linha[5]);
-                        long newRowId = db.insert("NoticiasLocais", null, camposNoticias);
-                        Log.i("ConsultaNoticia","Dados inseridos no banco rowId: " + newRowId);
+                    if (!firstRun) {
+                        for (int i=0; i < novasNoticias.length; i++) {
+                            String [] linha = novasNoticias[i].split("_");
+                            ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
+                            listadenoticias.add(umaNoticia);
+                            //inserir dados de noticias no banco aqui
+                            camposNoticias.put("_id",linha[0]);
+                            camposNoticias.put("Data",linha[1]);
+                            camposNoticias.put("Hora", linha[2]);
+                            camposNoticias.put("Titulo", linha[3]);
+                            camposNoticias.put("Resumo", linha[4]);
+                            camposNoticias.put("Conteudo", linha[5]);
+                            long newRowId = db.insert("NoticiasLocais", null, camposNoticias);
+                            Log.i("ConsultaNoticia","Dados inseridos no banco rowId: " + newRowId);
+                        }
+                    } else {
+                        for (int i=0; i < novasNoticias.length; i++) {
+                            String [] linha = novasNoticias[i].split("_");
+                            ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
+                            listadenoticias.add(umaNoticia);
+                            firstRun = false;
+                      }
                     }
-
                     listviewadapter = new ListViewAdapter(this, R.layout.listview_item, listadenoticias);
                     listaNoticias.setAdapter(listviewadapter);
                     listaNoticias.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
@@ -269,6 +301,8 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
 
                     temNoticias = false;
                     notificaUsuario("Informes do Campus Vitória", "Você tem novos informes ...");
+                } else {
+                    Log.i("MainActivity", "Não há novas notícias ...");
                 }
                 break;
             case STATUS_ERROR:
