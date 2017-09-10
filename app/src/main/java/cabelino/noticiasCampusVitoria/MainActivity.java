@@ -61,6 +61,7 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
     private ContentValues camposNoticias = new ContentValues();
     private String [] noticiasBancoLocal;
     public static Boolean connected = false;
+    private int nMensangensLocais = 0;
 
 
     @Override
@@ -106,7 +107,8 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
         );
         resultadoQuery.moveToFirst();
         Log.i("MainActivity", "Leitura de " + resultadoQuery.getCount() + " noticias locais com sucesso ...");
-        noticiasBancoLocal = new String[resultadoQuery.getCount()];
+        nMensangensLocais = resultadoQuery.getCount();
+        noticiasBancoLocal = new String[nMensangensLocais];
         int indiceNoticia = 0;
         while (!resultadoQuery.isAfterLast()) {
             noticiasBancoLocal[indiceNoticia] = resultadoQuery.getString(resultadoQuery.getColumnIndexOrThrow("_id")) + "_" +
@@ -192,24 +194,29 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                     }
                 } else {
                     if (firstRun) {
-                        novasNoticias = new String[noticiasBancoLocal.length + ultimasNoticias.length];
-                        String[] oldNews, freshNews;
-                        novasNoticias = noticiasBancoLocal;
-                        int m = noticiasBancoLocal.length;
-                        for (int k = 0; k > ultimasNoticias.length; k++) {
-                            freshNews = ultimasNoticias[k].split("_");
-                            for (int l = 0; l < noticiasBancoLocal.length; l++) {
-                                oldNews = noticiasBancoLocal[l].split("_");
-                                if (!oldNews.equals(freshNews)) {
-                                    novasNoticias[m] = ultimasNoticias[k];
-                                    m++;
+                        if (nMensangensLocais > 0) {
+                            novasNoticias = new String[noticiasBancoLocal.length + ultimasNoticias.length];
+                            String[] oldNews, freshNews;
+                            novasNoticias = noticiasBancoLocal;
+                            int m = noticiasBancoLocal.length;
+                            for (int k = 0; k > ultimasNoticias.length; k++) {
+                                freshNews = ultimasNoticias[k].split("_");
+                                for (int l = 0; l < noticiasBancoLocal.length; l++) {
+                                    oldNews = noticiasBancoLocal[l].split("_");
+                                    if (!oldNews.equals(freshNews)) {
+                                        novasNoticias[m] = ultimasNoticias[k];
+                                        m++;
+                                    }
                                 }
                             }
+                            resultado = novasNoticias;
+                            temNoticias = true;
+                        } else {
+                            resultado = ultimasNoticias;
+                            //firstRun = false;
+                            temNoticias = true;
                         }
                         Log.i("MainActivity", "Total de mensagens atualizadas: " + novasNoticias.length);
-
-                        resultado = novasNoticias;
-                        temNoticias = true;
                     }
 
                 }
@@ -231,14 +238,33 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                         }
                     } else {
                         if (firstRun) {
-                            for (int i = 0; i < novasNoticias.length; i++) {
-                                String[] linha = novasNoticias[i].split("_");
-                                ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
-                                listadenoticias.add(umaNoticia);
-                                firstRun = false;
-                            }
-                        }
+                            if (nMensangensLocais == 0) {
+                                novasNoticias = resultado;
 
+                                for (int i = 0; i < novasNoticias.length; i++) {
+                                    String[] linha = novasNoticias[i].split("_");
+                                    ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
+                                    listadenoticias.add(umaNoticia);
+                                    //inserir dados de noticias no banco aqui
+                                    camposNoticias.put("_id", linha[0]);
+                                    camposNoticias.put("Data", linha[1]);
+                                    camposNoticias.put("Hora", linha[2]);
+                                    camposNoticias.put("Titulo", linha[3]);
+                                    camposNoticias.put("Resumo", linha[4]);
+                                    camposNoticias.put("Conteudo", linha[5]);
+                                    long newRowId = db.insert("NoticiasLocais", null, camposNoticias);
+                                    Log.i("ConsultaNoticia", "Dados inseridos no banco rowId: " + newRowId);
+
+                                }
+                            } else {
+                                for (int i = 0; i < novasNoticias.length; i++) {
+                                    String[] linha = novasNoticias[i].split("_");
+                                    ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
+                                    listadenoticias.add(umaNoticia);
+                                }
+                            }
+                            firstRun = false;
+                        }
                     }
                     listviewadapter = new ListViewAdapter(this, R.layout.listview_item, listadenoticias);
                     listaNoticias.setAdapter(listviewadapter);
@@ -276,6 +302,7 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                                             String selection = "Titulo LIKE ?";
                                             String[] selectionArgs = {selecteditem.getTitulo()};
                                             db.delete("NoticiasLocais", selection, selectionArgs);
+                                            Log.i("MainActivity", "Mensagem: " + selecteditem.getTitulo() + " excluída com sucesso!");
                                         }
                                     }
                                     // Close CAB
