@@ -5,32 +5,32 @@ package cabelino.noticiasCampusVitoria;
  */
 
 public class ApresentaNoticia {
-    private String rank;
-    private String country;
-    private String population;
+    private String Titulo;
+    private String Data_Hora;
+    private String Resumo;
     private int flag;
 
     public ApresentaNoticia(int flag, String titulo, String texto) {
-        this.rank = titulo;
-        this.country = texto;
-        this.population = population;
+        this.Titulo = titulo;
+        this.Data_Hora = texto;
+        this.Resumo = Resumo;
         this.flag = flag;
     }
 
     public String getTitulo() {
-        return rank;
+        return Titulo;
     }
 
-    public void setTitulo(String rank) {
-        this.rank = rank;
+    public void setTitulo(String titulo) {
+        this.Titulo = titulo;
     }
 
     public String getTexto() {
-        return country;
+        return Data_Hora;
     }
 
-    public void setTexto(String country) {
-        this.country = country;
+    public void setTexto(String data_hora) {
+        this.Data_Hora = data_hora;
     }
 
     public int getFlag() {

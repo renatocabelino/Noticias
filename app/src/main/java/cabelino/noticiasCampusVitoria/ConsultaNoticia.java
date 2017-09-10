@@ -1,9 +1,7 @@
 package cabelino.noticiasCampusVitoria;
 
 import android.app.IntentService;
-import android.content.ContentValues;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.ResultReceiver;
@@ -90,10 +88,12 @@ public class ConsultaNoticia extends IntentService {
                     builder.append(linha);
                     linha = reader.readLine();
                 }
+                MainActivity.connected = true;
                 return new String(builder);
 
             } catch (IOException e) {
-                Log.e("error", "Não foi possível se conectar ao servidor de notícias", e);
+                Log.e("ConsultaNoticia", "Não foi possível se conectar ao servidor de notícias", e);
+                MainActivity.connected = false;
                 return "";
             }
         } finally {

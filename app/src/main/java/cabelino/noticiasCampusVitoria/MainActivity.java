@@ -5,7 +5,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -23,9 +22,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -64,6 +60,7 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
     private SQLiteDatabase db, dbRead;
     private ContentValues camposNoticias = new ContentValues();
     private String [] noticiasBancoLocal;
+    public static Boolean connected = false;
 
 
     @Override
@@ -182,7 +179,7 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                 String[] ultimasNoticias = new String[results.size()];
                 results.toArray(ultimasNoticias);
                 int j = 0;
-                if (!firstRun) {
+                if ((!firstRun) && (connected)) {
                     if (!comparaNoticias(ultimasNoticias, resultado  )) {
                         temNoticias = true;
                         novasNoticias = new String[(ultimasNoticias.length - resultado.length)];
@@ -194,28 +191,30 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                         resultado = ultimasNoticias;
                     }
                 } else {
-
-                    novasNoticias = new String[noticiasBancoLocal.length + ultimasNoticias.length];
-                    String [] oldNews, freshNews;
-                    novasNoticias = noticiasBancoLocal;
-                    int m = noticiasBancoLocal.length;
-                    for (int k=0; k > ultimasNoticias.length; k++) {
-                        freshNews = ultimasNoticias[k].split("_");
-                        for (int l=0; l < noticiasBancoLocal.length; l++ ) {
-                            oldNews = noticiasBancoLocal[l].split("_");
-                            if (!oldNews.equals(freshNews)) {
-                                novasNoticias[m] = ultimasNoticias[k];
-                                m++;
+                    if (firstRun) {
+                        novasNoticias = new String[noticiasBancoLocal.length + ultimasNoticias.length];
+                        String[] oldNews, freshNews;
+                        novasNoticias = noticiasBancoLocal;
+                        int m = noticiasBancoLocal.length;
+                        for (int k = 0; k > ultimasNoticias.length; k++) {
+                            freshNews = ultimasNoticias[k].split("_");
+                            for (int l = 0; l < noticiasBancoLocal.length; l++) {
+                                oldNews = noticiasBancoLocal[l].split("_");
+                                if (!oldNews.equals(freshNews)) {
+                                    novasNoticias[m] = ultimasNoticias[k];
+                                    m++;
+                                }
                             }
                         }
-                    }
-                    Log.i("MainActivity", "Total de mensagens atualizadas: " + novasNoticias.length);
+                        Log.i("MainActivity", "Total de mensagens atualizadas: " + novasNoticias.length);
 
-                    resultado = novasNoticias;
-                    temNoticias = true;
+                        resultado = novasNoticias;
+                        temNoticias = true;
+                    }
+
                 }
                 if (temNoticias) {
-                    if (!firstRun) {
+                    if ((!firstRun) && (connected)) {
                         for (int i=0; i < novasNoticias.length; i++) {
                             String [] linha = novasNoticias[i].split("_");
                             ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
@@ -231,12 +230,15 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                             Log.i("ConsultaNoticia","Dados inseridos no banco rowId: " + newRowId);
                         }
                     } else {
-                        for (int i=0; i < novasNoticias.length; i++) {
-                            String [] linha = novasNoticias[i].split("_");
-                            ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
-                            listadenoticias.add(umaNoticia);
-                            firstRun = false;
-                      }
+                        if (firstRun) {
+                            for (int i = 0; i < novasNoticias.length; i++) {
+                                String[] linha = novasNoticias[i].split("_");
+                                ApresentaNoticia umaNoticia = new ApresentaNoticia(R.drawable.logoifes, linha[3], linha[1] + "  " + linha[2]);
+                                listadenoticias.add(umaNoticia);
+                                firstRun = false;
+                            }
+                        }
+
                     }
                     listviewadapter = new ListViewAdapter(this, R.layout.listview_item, listadenoticias);
                     listaNoticias.setAdapter(listviewadapter);
@@ -270,6 +272,10 @@ public class MainActivity extends Activity implements NewsResultReceiver.Receive
                                                     .getItem(selected.keyAt(i));
                                             // Remove selected items following the ids
                                             listviewadapter.remove(selecteditem);
+                                            //remover do bando de dados a noticia selecionada aqui
+                                            String selection = "Titulo LIKE ?";
+                                            String[] selectionArgs = {selecteditem.getTitulo()};
+                                            db.delete("NoticiasLocais", selection, selectionArgs);
                                         }
                                     }
                                     // Close CAB
